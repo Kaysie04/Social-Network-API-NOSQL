@@ -1,28 +1,92 @@
-const router = require('express').Router();
-const {
-    getAllUsers,
-    getUserById,
-    createUser,
-    updateUser,
-    deleteUser,
-    addFriend,
-    removeFriend
-} = require('../../controllers/user-controller')
+const {User, Thought} = require('../models')
 
-// /api/users
-router.route('/')
-.get(getAllUsers)
-.post(createUser);
+const userController = {
+    // Find all users
+    getAllUsers(req, res){
+        User.find({})
+        .populate({
+            path: 'friends',
+            select: '-__v'
+        })
+        .select('.-__v')
+        .sort({ _id: -1 })
+        .then(dbUserData => res.json(dbUserData))
+        .catch(err => {
+            console.log(err);
+            res.status(404).json(err);
+        })
+    },
 
-// /api/users/:id
-router.route('/users/:id')
-.get(getUserById)
-.put(updateUser)
-.delete(deleteUser);
+    // Find one user by Id
+    getUserById({params}, res){
+        User.findOne({ _id: params.id})
+        .populate({
+            path: 'friends',
+            select: '-__v'
+        })
+        .populate({
+            path: 'thoughts',
+            select: '-__v'
+        })
+        .select('.-__v')
+        .then(dbUserData => {
+            if (!dbUserData) {
+                res.status(404).json({ message: 'No user found with this id'});
+                return;
+            }
+            res.json(dbUserData);
+        })
+        .catch(err => {
+            console.log(err);
+            res.status(400).json(err);
+        })
+    },
 
-// /api/users/:userId/friends/:friendId
-router.route('/:userId/friends/:friendId')
-.post(addFriend)
-.delete(removeFriend);
+    //  create a user
+    createUser({body}, res) {
+        User.create(body)
+        .then(dbUserData => res.json(dbUserData))
+        .catch(err => res.status(400).json(err));
+    },
 
-module.exports = router;
+    // update a user by Id
+    updateUser({ params, body}, res){
+        User.findByIdAndUpdate({_id: params.id, body}, {new: true, runValidators: true})
+        .then(dbUserData => {
+            if (!dbUserData){
+                res.status(404).json({message: ' no user found with is id'});
+                return;
+            }
+            res.json(dbUserData);
+        })
+        .catch(err => res.status(400).json(err));
+    },
+
+    // delete a user
+    deleteUser({params}, res){
+        User.findByIdAndDelete({ _id: params.id})
+        .then(dbUserData => {
+            if (!dbUserData) {
+                res.status(404).json({ message: ' no user found with this id'});
+                return;
+            }
+            Thought.deleteMany({_id: {$in: dbUserData.thoughts}})
+        })
+        .then(()=> {
+            res.json({message: "user and the user's thoughts have been deleted"})
+        })
+        .catch(err => res.status(400).json(err));
+    }
+};
+
+
+// add a friend 
+
+
+
+
+
+// delete a friend
+
+
+module.exports = userController;
