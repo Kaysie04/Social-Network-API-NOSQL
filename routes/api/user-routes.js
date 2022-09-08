@@ -15,7 +15,7 @@ router.route('/')
 .post(createUser);
 
 // /api/users/:id
-router.route('/users/:id')
+router.route('/:id')
 .get(getUserById)
 .put(updateUser)
 .delete(deleteUser);
@@ -26,20 +26,3 @@ router.route('/:userId/friends/:friendId')
 .delete(removeFriend);
 
 module.exports = router;
-
-
-addFriend({ params }, res) {
-    User.findOneAndUpdate(
-      { _id: params.userId },
-      { $addToSet: { friends: params.friendId } },
-      { new: true, runValidators: true }
-    )
-      .then((dbUserData) => {
-        if (!dbUserData) {
-          res.status(404).json({ message: "No user with this id" });
-          return;
-        }
-        res.json(dbUserData);
-      })
-      .catch((err) => res.json(err));
-  },

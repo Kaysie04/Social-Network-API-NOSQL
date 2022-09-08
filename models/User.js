@@ -5,7 +5,7 @@ const UserSchema = new Schema({
         type: String,
         unique: true,
         required: true,
-        trimmed: true
+        trim: true
     },
     email: {
         type: String,
@@ -29,7 +29,6 @@ const UserSchema = new Schema({
 {
     toJSON: {
       virtuals: true,
-      getters: true
     },
     // prevents virtuals from creating duplicate of _id as `id`
     id: false
